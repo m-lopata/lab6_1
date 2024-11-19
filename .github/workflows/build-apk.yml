@@ -3,7 +3,7 @@ name: Build APK with Buildozer
 on:
   push:
     branches:
-      - main  # Запускать workflow на push в ветку main
+      - master  # Запускать workflow на push в ветку master
 
 jobs:
   build:
@@ -33,27 +33,4 @@ jobs:
         sudo apt-get install -y \
           openjdk-11-jdk \
           unzip \
-          zlib1g-dev \
-          git
-
-    # Шаг 5: Устанавливаем необходимые Android SDK и NDK
-    - name: Set up Android SDK and NDK
-      run: |
-        curl -sS https://dl.google.com/android/repository/commandlinetools-linux-7583922_latest.zip -o tools.zip
-        unzip tools.zip -d $HOME/android-sdk-linux
-        yes | $HOME/android-sdk-linux/cmdline-tools/bin/sdkmanager --sdk_root=$HOME/android-sdk-linux --licenses
-        $HOME/android-sdk-linux/cmdline-tools/bin/sdkmanager --sdk_root=$HOME/android-sdk-linux "platform-tools" "platforms;android-31" "build-tools;31.0.0"
-        curl -O https://dl.google.com/android/repository/android-ndk-r25b-linux-x86_64.zip
-        unzip android-ndk-r25b-linux-x86_64.zip -d $HOME/android-ndk
-
-    # Шаг 6: Сборка APK с использованием Buildozer
-    - name: Build APK with Buildozer
-      run: |
-        buildozer android debug
-
-    # Шаг 7: Архивируем APK файл для удобства загрузки (необязательно)
-    - name: Upload APK as an artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: apk
-        path: ./bin/*.apk  # Путь к собранному APK
+         
