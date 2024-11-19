@@ -1,0 +1,53 @@
+name: Build APK
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4  # Используем актуальную версию actions/checkout
+
+    - name: Set up Python
+      uses: actions/setup-python@v5  # Используем актуальную версию actions/setup-python
+      with:
+        python-version: '3.9'  # Устанавливаем Python 3.9 (или другую нужную версию)
+
+    - name: Install dependencies
+      run: |
+        # Устанавливаем обновления и необходимые пакеты
+        python -m pip install --upgrade pip
+        pip install buildozer
+        pip install cython
+        sudo apt-get update
+        sudo apt-get install -y openjdk-8-jdk
+        sudo apt-get install -y zipalign
+        sudo apt-get install -y android-sdk
+        sudo apt-get install -y android-sdk-platform-tools
+        sudo apt-get install -y android-sdk-build-tools
+        sudo apt-get install -y adb
+        sudo apt-get install -y python3-venv
+        sudo apt-get install -y libffi-dev
+
+        # Устанавливаем путь к Android SDK для сборки
+        echo "export ANDROID_HOME=/usr/lib/android-sdk" >> $GITHUB_ENV
+        echo "export PATH=$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools" >> $GITHUB_ENV
+
+    - name: Build APK
+      run: |
+        # Устанавливаем Buildozer и запускаем сборку
+        buildozer -v android debug
+
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: apk
+        path: ./bin/*.apk  # Указываем путь к APK файлу, который должен быть в каталоге bin
