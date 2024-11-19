@@ -32,12 +32,10 @@ jobs:
 
     - name: Build APK
       run: |
-        cd /path/to/your/project  # Укажите путь к вашему проекту
-        buildozer -v android debug
+        buildozer -v android debug  # Здесь не нужно cd, так как репозиторий уже в текущем рабочем каталоге
 
     - name: Upload APK artifact
       uses: actions/upload-artifact@v3
       with:
         name: apk
-        path: /path/to/your/project/bin/*.apk  # Укажите путь к вашему APK файлу
-
+        path: ./bin/*.apk  # Указываем путь к APK файлу, который должен быть в каталоге bin
