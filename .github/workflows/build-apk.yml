@@ -1,0 +1,59 @@
+name: Build APK with Buildozer
+
+on:
+  push:
+    branches:
+      - main  # Запускать workflow на push в ветку main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  # Используем последний образ Ubuntu для сборки
+
+    steps:
+    # Шаг 1: Проверяем код из репозитория
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # Шаг 2: Устанавливаем Python
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.8'  # Установите нужную версию Python
+
+    # Шаг 3: Устанавливаем зависимости (cython и buildozer)
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install cython buildozer
+
+    # Шаг 4: Устанавливаем зависимости для Android
+    - name: Install Android dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          openjdk-11-jdk \
+          unzip \
+          zlib1g-dev \
+          git
+
+    # Шаг 5: Устанавливаем необходимые Android SDK и NDK
+    - name: Set up Android SDK and NDK
+      run: |
+        curl -sS https://dl.google.com/android/repository/commandlinetools-linux-7583922_latest.zip -o tools.zip
+        unzip tools.zip -d $HOME/android-sdk-linux
+        yes | $HOME/android-sdk-linux/cmdline-tools/bin/sdkmanager --sdk_root=$HOME/android-sdk-linux --licenses
+        $HOME/android-sdk-linux/cmdline-tools/bin/sdkmanager --sdk_root=$HOME/android-sdk-linux "platform-tools" "platforms;android-31" "build-tools;31.0.0"
+        curl -O https://dl.google.com/android/repository/android-ndk-r25b-linux-x86_64.zip
+        unzip android-ndk-r25b-linux-x86_64.zip -d $HOME/android-ndk
+
+    # Шаг 6: Сборка APK с использованием Buildozer
+    - name: Build APK with Buildozer
+      run: |
+        buildozer android debug
+
+    # Шаг 7: Архивируем APK файл для удобства загрузки (необязательно)
+    - name: Upload APK as an artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: apk
+        path: ./bin/*.apk  # Путь к собранному APK
