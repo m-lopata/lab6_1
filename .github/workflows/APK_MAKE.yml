@@ -1,65 +1,42 @@
-name: Build APK
-
+name: CI
 on:
   push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4  # Актуальная версия actions/checkout
+      - uses: actions/checkout@v2
 
-    - name: Set up Python
-      uses: actions/setup-python@v5  # Актуальная версия actions/setup-python
-      with:
-        python-version: '3.9'  # Устанавливаем Python 3.9 (или другую версию, подходящую для вашего проекта)
+      # used to cache dependencies with a timeout
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "::set-output name=date::$(/bin/date -u "+%Y%m%d")"
+        shell: bash
 
-    - name: Install dependencies
-      run: |
-        # Устанавливаем Python-зависимости
-        python -m pip install --upgrade pip
-        pip install buildozer
-        pip install cython
+      - name: Cache Buildozer global directory
+        uses: actions/cache@v2
+        with:
+          path: .buildozer_global
+          key: buildozer-global-${{ hashFiles('buildozer.spec') }} # Replace with your path
 
-        # Устанавливаем необходимые пакеты для сборки Android
-        sudo apt-get update
-        sudo apt-get install -y openjdk-8-jdk
-        sudo apt-get install -y zipalign
-        sudo apt-get install -y adb
-        sudo apt-get install -y python3-venv
-        sudo apt-get install -y libffi-dev
-        sudo apt-get install -y wget
+      - uses: actions/cache@v2
+        with:
+          path: .buildozer
+          key: ${{ runner.os }}-${{ steps.get-date.outputs.date }}-${{ hashFiles('buildozer.spec') }}
 
-        # Устанавливаем Android SDK Command Line Tools
-        wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip
-        unzip commandlinetools-linux-8512546_latest.zip -d $HOME/android-sdk
+      - name: Build with Buildozer
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
+        with:
+          command: buildozer android debug
+          buildozer_version: master
 
-        # Устанавливаем SDK компоненты
-        export ANDROID_HOME=$HOME/android-sdk
-        export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
-        echo "export ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
-        echo "export PATH=$PATH" >> $GITHUB_ENV
-
-        # Применяем лицензии
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
-
-        # Устанавливаем необходимые SDK компоненты
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-21" "build-tools;30.0.3" "ndk;21.3.6528147" "tools"
-
-    - name: Build APK
-      run: |
-        # Сборка APK через Buildozer
-        buildozer -v android debug
-
-    - name: Upload APK artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: apk
-        path: ./bin/*.apk  # Путь к сгенерированным APK файлам
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: package
+          path: ${{ steps.buildozer.outputs.filename }}
