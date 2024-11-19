@@ -23,11 +23,11 @@ jobs:
 
     - name: Install dependencies
       run: |
-        # Update and install necessary tools
+        # Update system and install required packages
         sudo apt-get update
         sudo apt-get install -y openjdk-8-jdk wget unzip libffi-dev python3-venv
 
-        # Set up Android SDK
+        # Download Android SDK Command-Line Tools
         mkdir -p $HOME/android-sdk/cmdline-tools
         cd $HOME/android-sdk/cmdline-tools
         wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O tools.zip
@@ -37,19 +37,18 @@ jobs:
 
         # Set environment variables
         echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
-        echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-        echo "PATH=$PATH:$HOME/android-sdk/cmdline-tools/tools/bin:$HOME/android-sdk/platform-tools:$HOME/android-sdk/build-tools/33.0.0" >> $GITHUB_ENV
+        echo "PATH=$PATH:$HOME/android-sdk/cmdline-tools/tools/bin:$HOME/android-sdk/platform-tools" >> $GITHUB_ENV
 
-        # Install required SDK components
+        # Install necessary Android SDK components
         yes | $HOME/android-sdk/cmdline-tools/tools/bin/sdkmanager --licenses
         $HOME/android-sdk/cmdline-tools/tools/bin/sdkmanager \
           "platform-tools" \
           "build-tools;33.0.0" \
           "platforms;android-33"
 
-        # Ensure build-tools is in the expected location
-        mkdir -p $HOME/android-sdk/build-tools
-        ln -s $HOME/android-sdk/build-tools/33.0.0 $HOME/android-sdk/build-tools/latest
+        # Ensure Buildozer can find the required tools
+        mkdir -p $HOME/.buildozer/android/platform/android-sdk/build-tools
+        cp -r $HOME/android-sdk/build-tools/33.0.0 $HOME/.buildozer/android/platform/android-sdk/build-tools/
 
         # Install Python dependencies
         python -m pip install --upgrade pip
