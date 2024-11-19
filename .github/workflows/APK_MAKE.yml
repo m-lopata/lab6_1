@@ -1,7 +1,11 @@
 name: Custom build
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - master  # Запуск при комі в гілку master
+  workflow_dispatch:  # Опція ручного запуску
+
     inputs:
       arch:
         description: "Comma separated architectures (e.g., armeabi-v7a, arm64-v8a, x86_64, x86)"
