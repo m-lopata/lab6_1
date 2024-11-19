@@ -1,0 +1,37 @@
+name: Build APK with Buildozer
+
+on:
+  push:
+    branches:
+      - main # или любая другая ветка
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'  # Можно выбрать версию Python, которая подходит для проекта
+
+    - name: Install dependencies
+      run: |
+        python -m venv .venv
+        source .venv/bin/activate
+        pip install --upgrade pip
+        pip install cython buildozer
+
+    - name: Build APK
+      run: |
+        source .venv/bin/activate
+        buildozer -v android debug
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v2
+      with:
+        name: apk
+        path: /home/runner/work/<repository_name>/<repository_name>/.buildozer/android/platform/build-arm64-v8a_armeabi-v7a/bin/*.apk

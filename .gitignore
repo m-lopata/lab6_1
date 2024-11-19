@@ -1,0 +1,39 @@
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+
+# Виртуальная среда (если используете виртуальное окружение)
+.venv/
+env/
+venv/
+
+# Buildozer build files
+.buildozer/
+
+# Файлы и каталоги, созданные при сборке APK
+*.apk
+*.log
+
+# Папки и файлы, не нужные для репозитория
+*.swp
+*.swo
+*.bak
+*.tmp
+
+# Директории конфигурации IDE
+.idea/
+.vscode/
+
+# PyCharm specific
+*.iml
+.idea/
+
+# Системные файлы macOS (если работаете на macOS)
+.DS_Store
+
+# Системные файлы Linux
+*.desktop
+
+# GitHub actions files (если вы используете Actions)
+.github/workflows/*
