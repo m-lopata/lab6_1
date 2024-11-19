@@ -14,19 +14,21 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4  # Используем актуальную версию actions/checkout
+      uses: actions/checkout@v4  # Актуальная версия actions/checkout
 
     - name: Set up Python
-      uses: actions/setup-python@v5  # Используем актуальную версию actions/setup-python
+      uses: actions/setup-python@v5  # Актуальная версия actions/setup-python
       with:
-        python-version: '3.9'  # Устанавливаем Python 3.9 (или другую нужную версию)
+        python-version: '3.9'  # Устанавливаем Python 3.9 (или другую версию, подходящую для вашего проекта)
 
     - name: Install dependencies
       run: |
-        # Устанавливаем обновления и необходимые пакеты
+        # Устанавливаем Python-зависимости
         python -m pip install --upgrade pip
         pip install buildozer
         pip install cython
+
+        # Устанавливаем необходимые пакеты для сборки Android
         sudo apt-get update
         sudo apt-get install -y openjdk-8-jdk
         sudo apt-get install -y zipalign
@@ -36,18 +38,27 @@ jobs:
         sudo apt-get install -y adb
         sudo apt-get install -y python3-venv
         sudo apt-get install -y libffi-dev
+        sudo apt-get install -y wget
 
-        # Устанавливаем путь к Android SDK для сборки
-        echo "export ANDROID_HOME=/usr/lib/android-sdk" >> $GITHUB_ENV
-        echo "export PATH=$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools" >> $GITHUB_ENV
+        # Устанавливаем Android SDK и NDK
+        wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip
+        unzip commandlinetools-linux-8512546_latest.zip -d $HOME/android-sdk
+        export ANDROID_HOME=$HOME/android-sdk
+        export PATH=$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools
+        echo "export ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+        echo "export PATH=$PATH" >> $GITHUB_ENV
+
+        # Устанавливаем все необходимые компоненты SDK
+        yes | sdkmanager --licenses
+        sdkmanager "platform-tools" "platforms;android-21" "build-tools;30.0.3" "ndk;21.3.6528147" "tools"
 
     - name: Build APK
       run: |
-        # Устанавливаем Buildozer и запускаем сборку
+        # Сборка APK через Buildozer
         buildozer -v android debug
 
     - name: Upload APK artifact
       uses: actions/upload-artifact@v3
       with:
         name: apk
-        path: ./bin/*.apk  # Указываем путь к APK файлу, который должен быть в каталоге bin
+        path: ./bin/*.apk  # Путь к сгенерированным APK файлам
