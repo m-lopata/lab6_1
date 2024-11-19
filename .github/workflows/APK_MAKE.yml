@@ -23,7 +23,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        # Update system and install required packages
+        # Update system and install necessary packages
         sudo apt-get update
         sudo apt-get install -y openjdk-8-jdk wget unzip libffi-dev python3-venv
 
@@ -37,6 +37,7 @@ jobs:
 
         # Set environment variables
         echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
+        echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
         echo "PATH=$PATH:$HOME/android-sdk/cmdline-tools/tools/bin:$HOME/android-sdk/platform-tools" >> $GITHUB_ENV
 
         # Install necessary Android SDK components
@@ -46,7 +47,11 @@ jobs:
           "build-tools;33.0.0" \
           "platforms;android-33"
 
-        # Ensure Buildozer can find the required tools
+        # Create old-style path for Buildozer compatibility
+        mkdir -p $HOME/.buildozer/android/platform/android-sdk/tools/bin
+        ln -s $HOME/android-sdk/cmdline-tools/tools/bin/sdkmanager $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
+
+        # Ensure build-tools is in the expected location
         mkdir -p $HOME/.buildozer/android/platform/android-sdk/build-tools
         cp -r $HOME/android-sdk/build-tools/33.0.0 $HOME/.buildozer/android/platform/android-sdk/build-tools/
 
