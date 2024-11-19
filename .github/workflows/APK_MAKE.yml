@@ -47,13 +47,10 @@ jobs:
           "build-tools;33.0.0" \
           "platforms;android-33"
 
-        # Create old-style path for Buildozer compatibility
+        # Ensure paths for Buildozer compatibility
         mkdir -p $HOME/.buildozer/android/platform/android-sdk/tools/bin
         ln -s $HOME/android-sdk/cmdline-tools/tools/bin/sdkmanager $HOME/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
-
-        # Ensure build-tools is in the expected location
-        mkdir -p $HOME/.buildozer/android/platform/android-sdk/build-tools
-        cp -r $HOME/android-sdk/build-tools/33.0.0 $HOME/.buildozer/android/platform/android-sdk/build-tools/
+        ln -s $HOME/android-sdk/cmdline-tools/tools/bin/avdmanager $HOME/.buildozer/android/platform/android-sdk/tools/bin/avdmanager
 
         # Install Python dependencies
         python -m pip install --upgrade pip
