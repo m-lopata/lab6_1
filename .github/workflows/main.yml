@@ -3,28 +3,34 @@ name: Build APK
 on:
   push:
     branches:
-      - main
+      - main  # или ваша основная ветка
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Check out repository
+    - name: Checkout repository
       uses: actions/checkout@v3
-    
+
     - name: Set up Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
-        python-version: 3.12
-    
+        python-version: '3.8'  # Выберите версию Python, которая вам нужна
+
     - name: Install dependencies
       run: |
-        python -m venv venv
-        source venv/bin/activate
-        pip install cython
-        pip install buildozer
-    
-    - name: Build APK
+        python -m pip install --upgrade pip
+        pip install cython buildozer
+
+    - name: Install Android dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          openjdk-11-jdk \
+          unzip \
+          zlib1g-dev
+
+    - name: Build APK with Buildozer
       run: |
         buildozer -v android debug
