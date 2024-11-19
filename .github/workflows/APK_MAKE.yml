@@ -1,80 +1,65 @@
-name: 'Kivy App to APK'
-description: 'Convert Kivy app to APK'
-inputs:
-  python-version:
-    description: 'Python version to use'
-    default: '3.8'
-  work-dir:
-    default: '.'
-    description: 'Working directory'
-  buildozer-cmd:
-    default: 'buildozer android debug'
-    description: 'Buildozer command to use'
+name: Build APK
 
-# Add the branding section
-branding:
-  color: 'green'
-  icon: 'play'
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
 
-runs:
-  using: "composite"
-  steps:
-    - name: Setup python
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        architecture: x64
-        python-version: ${{ inputs.python-version }}
+        python-version: '3.9'
 
-    - name: Setup Java 17 required by Gradle
-      uses: actions/setup-java@v4
+    - name: Install dependencies
+      run: |
+        # Устанавливаем Buildozer и другие зависимости
+        python -m pip install --upgrade pip
+        pip install buildozer cython
+
+        # Устанавливаем зависимости для Android SDK и NDK
+        sudo apt-get update
+        sudo apt-get install -y openjdk-8-jdk
+        sudo apt-get install -y zipalign
+        sudo apt-get install -y adb
+        sudo apt-get install -y python3-venv
+        sudo apt-get install -y libffi-dev
+        sudo apt-get install -y wget unzip
+
+        # Загружаем и распаковываем Android SDK (и инструменты командной строки)
+        wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip -P $HOME/
+        mkdir -p $HOME/android-sdk/cmdline-tools
+        unzip $HOME/commandlinetools-linux-8512546_latest.zip -d $HOME/android-sdk/cmdline-tools/
+
+        # Устанавливаем инструменты SDK
+        export ANDROID_HOME=$HOME/android-sdk
+        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+        echo "export ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+        echo "export PATH=$PATH" >> $GITHUB_ENV
+
+        # Принимаем лицензии для SDK
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+
+        # Устанавливаем необходимые пакеты SDK
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "build-tools;30.0.3" "platforms;android-21" "ndk;21.3.6528147"
+
+    - name: Build APK
+      run: |
+        # Сборка APK с использованием Buildozer
+        buildozer -v android debug
+
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v3
       with:
-        distribution: 'temurin'  # or 'zulu','liberica', etc.
-        java-version: '17'
-
-    - name: Set JAVA_HOME
-      run: |
-        echo "JAVA_HOME=$JAVA_HOME" >> $GITHUB_ENV
-      shell: bash
-
-    - name: Prepare virtual environment
-      run: |
-        python3 -m venv venv
-        source venv/bin/activate
-        echo "Using Python==$(python --version)"
-      shell: bash
-      
-    - name: Install and upgrade dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y git \
-          zip \
-          unzip \
-          openjdk-17-jdk \
-          python3-pip \
-          autoconf \
-          libtool \
-          pkg-config \
-          zlib1g-dev \
-          libncurses5-dev \
-          libncursesw5-dev \
-          libtinfo5 \
-          cmake \
-          libffi-dev \
-          libssl-dev
-        export PATH=$PATH:~/.local/bin/
-        python3 -m pip install --upgrade \
-          Cython==0.29.33 \
-          buildozer
-      shell: bash
-
-    - name: Install requirements in requirements.txt if it exists
-      run: |
-        if [ -f requirements.txt ]; then
-          python3 -m pip install -r requirements.txt
-        fi
-      shell: bash
-
-    - name: Build with Buildozer
-      run: |
-        ${{ inputs.buildozer-cmd }}
-      shell: bash
+        name: apk
+        path: ./bin/*.apk  # Путь к сгенерированным APK
